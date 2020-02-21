@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { validationResult } = require('express-validator/check');
 
+const io = require('../socket')
 const Post = require('../models/post');
 const User = require('../models/user');
 
@@ -11,7 +12,7 @@ exports.getPosts = async (req, res, next) => {
     try {
         const totalItems = await Post.find().countDocuments()
         const posts = await Post.find()
-            // .populate('creator')
+            .populate('creator')
             .skip((currentPage - 1) * ITEM_PER_PAGE)
             .limit(ITEM_PER_PAGE)
             res.status(200).json({
@@ -42,7 +43,6 @@ exports.createPost = async (req, res, next) => {
     const imageUrl = req.file.path.replace("\\" ,"/");
     const title = req.body.title;
     const content = req.body.content;
-    let creator;
     const post = new Post({
         title: title, 
         content: content,
@@ -54,6 +54,9 @@ exports.createPost = async (req, res, next) => {
         const user = await User.findById(req.userId)
             user.posts.push(post);
         await user.save();
+        io.getIo().emit('posts', { 
+            action: 'create', post: { ...post._doc, creator: { _id: req.userId, name: user.name } } 
+        })
             res.status(201).json({
                 message: 'Successfull',
                 post: post,
@@ -88,13 +91,13 @@ exports.updatePost = async (req, res, next) => {
         throw error;
     }
     try {
-    const post = await Post.findById(postId)
+    const post = await Post.findById(postId).populate('creator');
         if (!post) {
             const error = new Error('Could Not find post');
             error.statusCode = 404;
             throw error;
         }
-        if (post.creator.toString() !== req.userId) {
+        if (post.creator._id.toString() !== req.userId) {
             const error = new Error('Not Authorization');
             error.statusCode = 403;
             throw error;
@@ -106,7 +109,7 @@ exports.updatePost = async (req, res, next) => {
         post.imageUrl = imageUrl;
         post.content = content;
         const result = await post.save();
-        console.log(result)
+        io.getIo().emit('posts', { action: 'update', post: result });
         res.status(200).json({ message:'Updated!', post: result})
     } catch (err) {
         if (!err.statusCode) {
