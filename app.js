@@ -2,8 +2,12 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const multer = require('multer')
-const uuidv4 = require('uuid/v4')
+const multer = require('multer');
+const uuidv4 = require('uuid/v4');
+const graphqlHttp = require('express-graphql'); 
+
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolvers = require('./graphql/resolvers');
 
 const app = express();
 
@@ -40,6 +44,11 @@ app.use((req, res, next) => {
     next();
 })
 
+app.use('/graphql', graphqlHttp({
+    schema: graphqlSchema,
+    rootValue: graphqlResolvers,
+    graphiql: true
+}))
 
 app.use((error, req, res, next) => {
     console.log(error);
@@ -52,5 +61,5 @@ app.use((error, req, res, next) => {
 mongoose.connect('mongodb+srv://ariefirawant:dksq7mT60cz1Qdnj@cluster0-fv6bh.mongodb.net/messages?retryWrites=true&w=majority')
 .then(result => {
     app.listen(8080);   
-    console.log('CLIENT CONNECTED!')
+    console.log('CONNECTED!')
 }).catch(err => console.log(err))
