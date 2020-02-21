@@ -5,9 +5,6 @@ const mongoose = require('mongoose');
 const multer = require('multer')
 const uuidv4 = require('uuid/v4')
 
-const feedRoutes = require('./routes/feed');
-const authRoutes = require('./routes/auth');
-
 const app = express();
 
 const fileStorage = multer.diskStorage({
@@ -43,8 +40,6 @@ app.use((req, res, next) => {
     next();
 })
 
-app.use('/feed', feedRoutes);
-app.use('/auth', authRoutes);
 
 app.use((error, req, res, next) => {
     console.log(error);
@@ -56,9 +51,6 @@ app.use((error, req, res, next) => {
 
 mongoose.connect('mongodb+srv://ariefirawant:dksq7mT60cz1Qdnj@cluster0-fv6bh.mongodb.net/messages?retryWrites=true&w=majority')
 .then(result => {
-    const server = app.listen(8080);   
-    const io = require('./socket').init(server)
-    io.on('connection', socket => {
-        console.log('CLIENT CONNECTED!')
-    })
+    app.listen(8080);   
+    console.log('CLIENT CONNECTED!')
 }).catch(err => console.log(err))
