@@ -47,7 +47,16 @@ app.use((req, res, next) => {
 app.use('/graphql', graphqlHttp({
     schema: graphqlSchema,
     rootValue: graphqlResolvers,
-    graphiql: true
+    graphiql: true,
+    formatError(errs) {
+        if (!errs.originalError) {
+            return err;
+        }
+        const data = errs.originalError.data;
+        const message = errs.message || 'ada error terdeteksi';
+        const code = errs.originalError.code || 500;
+        return { message: message, status: code, data: data};
+    }
 }))
 
 app.use((error, req, res, next) => {
