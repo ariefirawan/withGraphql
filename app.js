@@ -6,6 +6,7 @@ const multer = require('multer');
 const uuidv4 = require('uuid/v4');
 const graphqlHttp = require('express-graphql'); 
 
+const auth = require('./middleware/is-auth')
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolvers = require('./graphql/resolvers');
 
@@ -41,8 +42,13 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, PATCH, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
     next();
 })
+
+app.use(auth);
 
 app.use('/graphql', graphqlHttp({
     schema: graphqlSchema,
